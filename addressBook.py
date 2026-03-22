@@ -1,6 +1,8 @@
 from collections import UserDict
 from datetime import datetime, timedelta
 
+birthday_format = "%d.%m.%Y"
+
 class Field:
     def __init__(self, value):
         self.value = value
@@ -11,14 +13,14 @@ class Field:
 class Name(Field):
     def __init__(self, value):
         if not value:
-             raise ValueError
+            raise ValueError("Name cannot be empty.")
         super().__init__(value)
 
 
 class Phone(Field):
     def __init__(self, value):
         if not self._validate(value):
-             raise ValueError("Invalid phone format")
+            raise ValueError("Invalid phone format. It must contain exactly 10 digits.")
         super().__init__(value)
     
     def _validate(self, value):
@@ -27,10 +29,10 @@ class Phone(Field):
 class Birthday(Field):
     def __init__(self, value):
         try:
-            super().__init__(datetime.strptime(value, "%d.%m.%Y").date())
+            super().__init__(datetime.strptime(value, birthday_format).date())
             
         except ValueError:
-            raise ValueError("Invalid date format. Use DD.MM.YYYY")
+            raise ValueError("Invalid date format. Use DD.MM.YYYY.")
 
 class Record:
     def __init__(self, name):
@@ -57,17 +59,22 @@ class Record:
             if phone.value == current_phone:
                 self.phones[index] = Phone(new_phone)
                 return True
-        raise ValueError(f"Phone number {current_phone} not found for this contact.")
+        raise ValueError(f"Phone number {current_phone} was not found.")
     
     def add_birthday(self, birthday):
         self.birthday = Birthday(birthday)
 
     def __str__(self):
-        return f"Contact name: {self.name.value}, phones: {' | '.join(p.value for p in self.phones)}"
-
+        return (
+            f"Contact name: {self.name.value}, "
+            f"phones: {' | '.join(p.value for p in self.phones)}, "
+            f"birthday: {self.birthday or 'not set'}"
+        )
     def __repr__(self):
-        return f"Contact name: {self.name.value}, phones: {' | '.join(p.value for p in self.phones)}"
-
+        return (
+            f"Contact name: {self.name.value}, phones:\n"
+            f"{''.join(f' * {p.value}\n' for p in self.phones)}"
+        )
 class AddressBook(UserDict):
     def add_record(self, record):
         self.data[record.name.value] = record
@@ -99,7 +106,13 @@ class AddressBook(UserDict):
                 if(weekday == 5 or weekday == 6):
                     user_birthday_this_year += timedelta(days= 7 - weekday)
                 
-                result.append({"name": record.name.value, "congratulation_date": user_birthday_this_year.strftime("%Y.%m.%d")})
-
+                result.append(
+                    {
+                        "name": record.name.value,
+                        "congratulation_date": user_birthday_this_year.strftime(
+                            birthday_format
+                        ),
+                    }
+                )
         return result
 	

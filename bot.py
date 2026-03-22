@@ -15,10 +15,10 @@ def input_error(func):
             return error_message
         except KeyError:
             # Виникає, коли ключа немає в словнику contacts
-            return "Contact not found"
+            return "Error: Contact not found."
         except IndexError:
             # Виникає, коли в args недостатньо елементів
-            return "Enter the argument for the command."
+            return "Error: Please provide the required arguments for the command."
 
 
     return inner
@@ -45,10 +45,9 @@ def add_contact(args, book: AddressBook):
 def change_contact(args, book: AddressBook):
     name, current_phone, new_phone, *_ = args
     record = book.find(name)
-    message = "Contact updated."
     if record is not None:
         record.edit_phone(current_phone, new_phone)
-        return message
+        return "Contact updated."
     else:
         raise KeyError
 
@@ -59,7 +58,7 @@ def show_phone(args, book: AddressBook):
     if not record:
         raise KeyError
 
-    return f"{name} phones: {' | '.join(p.value for p in record.phones)}"
+    return f"{name}'s phones: {' | '.join(p.value for p in record.phones)}"
 
 @input_error
 def add_birthday(args, book: AddressBook):
@@ -68,8 +67,7 @@ def add_birthday(args, book: AddressBook):
     if not record:
         raise KeyError
     record.add_birthday(birthday)
-    return f"{birthday} added"
-
+    return f"Birthday {birthday} has been added."
 @input_error
 def show_birthday(args, book: AddressBook):
     name, *_ = args
@@ -77,17 +75,24 @@ def show_birthday(args, book: AddressBook):
     if not record:
         raise KeyError
     if record.birthday:
-        # Повертаємо рядок, а не об'єкт
         return f"{name}'s birthday: {record.birthday.value.strftime('%d.%m.%Y')}"
     return f"Birthday for {name} is not set."
 
 @input_error
-def birthdays(book: AddressBook):
-    return book.get_upcoming_birthdays() or "No birthdays are comming"
+def birthdays(args, book: AddressBook):
+    upcoming = book.get_upcoming_birthdays()
+    if len(upcoming) == 0:
+        return "There are no upcoming birthdays."
 
+    return "Upcoming birthdays:\n" + "\n".join(
+        f"- {rec['congratulation_date']}: {rec['name']}" for rec in upcoming
+    )
 
 def show_all(book: AddressBook):
-    records = "\n".join([str(record) for record in book.items()])
+    records = "\n".join([str(record) for record in book.values()])
+
+    if not records:
+        return "The address book is empty."
     return records
 
 
@@ -102,7 +107,7 @@ def main():
         command, *args = parse_input(user_input)
 
         if command in ["close", "exit"]:
-            print("Good bye!")
+            print("Goodbye!")
             break
         elif command == "hello":
             print("How can I help you?")
@@ -121,7 +126,7 @@ def main():
             print(show_birthday(args, book))
 
         elif command == "birthdays":
-            print(birthdays(book))
+            print(birthdays(args, book))
         else:
             print("Invalid command.")
 
